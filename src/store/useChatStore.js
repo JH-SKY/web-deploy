@@ -8,11 +8,18 @@ const useChatStore = create((set, get) => ({
   loading: false,
 
   // --- 대화 목록 ---
-
   fetchConversations: async () => {
-    const res = await fetch(`${API_URL}/conversations`);
-    const data = await res.json();
-    set({ conversations: data });
+    try {
+      const res = await fetch(`${API_URL}/conversations`);
+      const data = await res.json();
+
+      // 1. 그릇 확인: data가 진짜 배열인지 확인하고, 아니면 빈 배열([])을 넣어요.
+      // u.map 에러를 원천 봉쇄하는 비결입니다!
+      set({ conversations: Array.isArray(data) ? data : [] });
+    } catch (error) {
+      console.error("대화 목록 로드 실패:", error);
+      set({ conversations: [] }); // 에러 나면 빈 목록으로 초기화
+    }
   },
 
   createConversation: async () => {
@@ -57,7 +64,10 @@ const useChatStore = create((set, get) => ({
 
     // AI 응답 자리 생성 (tools 배열 포함)
     set((state) => ({
-      messages: [...state.messages, { role: "assistant", content: "", tools: [] }],
+      messages: [
+        ...state.messages,
+        { role: "assistant", content: "", tools: [] },
+      ],
     }));
 
     try {
@@ -68,7 +78,7 @@ const useChatStore = create((set, get) => ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: content }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -85,7 +95,9 @@ const useChatStore = create((set, get) => ({
 
         // chunk를 텍스트로 변환하고 SSE 형식(data: ...)인 줄만 필터링
         const text = decoder.decode(value, { stream: true });
-        const lines = text.split("\n").filter((line) => line.startsWith("data: "));
+        const lines = text
+          .split("\n")
+          .filter((line) => line.startsWith("data: "));
 
         for (const line of lines) {
           const data = line.slice(6); // "data: " 제거
@@ -101,12 +113,15 @@ const useChatStore = create((set, get) => ({
             if (parsed.type === "token") {
               last.content += parsed.content;
             } else if (parsed.type === "tool_call") {
-              last.tools = [...(last.tools || []), { name: parsed.name, status: "calling" }];
+              last.tools = [
+                ...(last.tools || []),
+                { name: parsed.name, status: "calling" },
+              ];
             } else if (parsed.type === "tool_result") {
               last.tools = (last.tools || []).map((t) =>
                 t.name === parsed.name && t.status === "calling"
                   ? { ...t, status: "done" }
-                  : t
+                  : t,
               );
             }
 
