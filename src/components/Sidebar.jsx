@@ -3,12 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import useChatStore from "../store/useChatStore";
 
 const Sidebar = () => {
-  const {
-    conversations,
-    fetchConversations,
-    createConversation,
-    deleteConversation,
-  } = useChatStore();
+  const { conversations, fetchConversations, createConversation, deleteConversation } =
+    useChatStore();
   const navigate = useNavigate();
   const { threadId } = useParams();
 
@@ -41,7 +37,7 @@ const Sidebar = () => {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {conversations?.map((conv) => (
+        {conversations.map((conv) => (
           <Link
             key={conv.id}
             to={`/chat/${conv.id}`}
