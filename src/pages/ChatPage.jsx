@@ -76,7 +76,7 @@ const ChatPage = () => {
               메시지를 입력하여 대화를 시작하세요.
             </p>
           )}
-          {messages.map((msg, index) => (
+          {messages?.map((msg, index) => (
             <div
               key={index}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
